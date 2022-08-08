@@ -1,7 +1,11 @@
 "use strict";
 
-import {JSONProcessor} from "./JSONProcessor";
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
 
-export default {
-	Processor: JSONProcessor
-}
+var _JSONProcessor = require("./JSONProcessor");
+
+exports.default = {
+	Processor: _JSONProcessor.JSONProcessor
+};
