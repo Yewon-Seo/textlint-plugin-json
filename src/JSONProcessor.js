@@ -55,8 +55,10 @@ var JSONProcessor = exports.JSONProcessor = function () {
 }();
 
 function delete_offset(node) {
-
-    let prop_names = Object.keys(config.key).map(item => config.key[item]);
+    let prop_names = []
+    if (config.key != undefined) {
+        prop_names = Object.keys(config.key).map(item => config.key[item]);
+    }
     switch (node.type) {
         case "Object":
             node.children.map(function (child) {
