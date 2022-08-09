@@ -17,7 +17,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var config;
+var config; // configをグローバル変数として使うためここで宣言する
 
 var JSONProcessor = exports.JSONProcessor = function () {
     function JSONProcessor() {
@@ -37,7 +37,7 @@ var JSONProcessor = exports.JSONProcessor = function () {
             return {
                 preProcess: function preProcess(text) {
                     var ast = (0, _jsonToAst2.default)(text);
-                    var fixed_ast = delete_offset(ast);
+                    var fixed_ast = delete_offset(ast); // プロパティを特定する為に追加
                     ast = convert(fixed_ast);
                     return ast;
                 },
@@ -54,11 +54,17 @@ var JSONProcessor = exports.JSONProcessor = function () {
     return JSONProcessor;
 }();
 
+// delete_offset : textlintではoffsetを利用して文語の位置を特定しているため、
+// .textlintrcに記載されたプロパティではない場合、
+// start offsetとend offsetを0にしてtextlintエンジンで検索されないように処理する
 function delete_offset(node) {
-    let prop_names = []
+    let prop_names = [] // .textlintrcでkeyとして記載されたプロパティ名(複数あるのでlist化する)
     if (config.key != undefined) {
         prop_names = Object.keys(config.key).map(item => config.key[item]);
     }
+    // astのleaf nodeは"Identifier"か"Literal"typeを持つ仕組みになっているので
+    // leaf nodeに辿り着くまでnodeをswitch-caseで巡回させる
+    // astに関してはリンクを参照 (https://textlint.github.io/docs/txtnode.html)
     switch (node.type) {
         case "Object":
             node.children.map(function (child) {
@@ -66,6 +72,7 @@ function delete_offset(node) {
             });
             break;
         case "Property":
+            // 検索対象となるnodeのkey(=プロパティ)が.textlintrcに明記されていない場合⇒検索対象から除外
             if (!prop_names.includes(node.key.value)) {
                 delete_offset(node.value)
             }
@@ -75,11 +82,11 @@ function delete_offset(node) {
                 return delete_offset(child);
             });
             break;
-        case "Identifier":
+        case "Identifier": // プロパティのkey値
             node.loc.start.offset = 0
             node.loc.end.offset = 0
             break; 
-        case "Literal":
+        case "Literal": // プロパティのvalue値
             node.loc.start.offset = 0
             node.loc.end.offset = 0
             break;
@@ -99,7 +106,8 @@ function convert(node) {
             break;
         case "Property":
             node.type = _astNodeTypes.ASTNodeTypes.Document;
-            node.children = [convert(node.value)];
+            node.children = [convert(node.value)]; 
+            // プロパティkeyは検索対象にならないように node.children = [convert(node.key), convert(node.value)];から修正
             delete node.key;
             delete node.value; 
             break;
